@@ -100,7 +100,7 @@ Here are some of the images from the otpt of the FCN with 2 classes: road or not
 ![alt text][image6]
 ![alt text][image7]
 
-### Future Workds
+### Future Works
 
 * Apply the trained model to a video
 * Train and Inference on the cityscapes dataset instead of the Kitti dataset. 
