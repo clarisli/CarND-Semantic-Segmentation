@@ -1,6 +1,16 @@
 # Semantic Segmentation
-### Introduction
-In this project, you'll label the pixels of a road in images using a Fully Convolutional Network (FCN).
+
+The goal of this project is to label the pixels of a road in images using a Fully Convolutional Network (FCN)
+
+[//]: # (Image References)
+
+[image1]: ./misc_images/fcn_encoder_decoder.png
+[image2]: ./misc_images/fcn.png
+[image3]: ./misc_images/um_000004.png
+[image4]: ./misc_images/um_000057.png
+[image5]: ./misc_images/um_000083.png
+[image6]: ./misc_images/umm_000033.png
+[image7]: ./misc_images/uu_000098.png
 
 ### Setup
 ##### GPU
@@ -14,10 +24,6 @@ Make sure you have the following is installed:
 ##### Dataset
 Download the [Kitti Road dataset](http://www.cvlibs.net/datasets/kitti/eval_road.php) from [here](http://www.cvlibs.net/download.php?file=data_road.zip).  Extract the dataset in the `data` folder.  This will create the folder `data_road` with all the training a test images.
 
-### Start
-##### Implement
-Implement the code in the `main.py` module indicated by the "TODO" comments.
-The comments indicated with "OPTIONAL" tag are not required to complete.
 ##### Run
 Run the following command to run the project:
 ```
@@ -25,24 +31,74 @@ python main.py
 ```
 **Note** If running this in Jupyter Notebook system messages, such as those regarding test status, may appear in the terminal rather than the notebook.
 
-### Submission
-1. Ensure you've passed all the unit tests.
-2. Ensure you pass all points on [the rubric](https://review.udacity.com/#!/rubrics/989/view).
-3. Submit the following in a zip file.
- - `helper.py`
- - `main.py`
- - `project_tests.py`
- - Newest inference images from `runs` folder  (**all images from the most recent run**)
- 
- ### Tips
-- The link for the frozen `VGG16` model is hardcoded into `helper.py`.  The model can be found [here](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/vgg.zip).
-- The model is not vanilla `VGG16`, but a fully convolutional version, which already contains the 1x1 convolutions to replace the fully connected layers. Please see this [post](https://s3-us-west-1.amazonaws.com/udacity-selfdrivingcar/forum_archive/Semantic_Segmentation_advice.pdf) for more information.  A summary of additional points, follow. 
-- The original FCN-8s was trained in stages. The authors later uploaded a version that was trained all at once to their GitHub repo.  The version in the GitHub repo has one important difference: The outputs of pooling layers 3 and 4 are scaled before they are fed into the 1x1 convolutions.  As a result, some students have found that the model learns much better with the scaling layers included. The model may not converge substantially faster, but may reach a higher IoU and accuracy. 
-- When adding l2-regularization, setting a regularizer in the arguments of the `tf.layers` is not enough. Regularization loss terms must be manually added to your loss function. otherwise regularization is not implemented.
- 
-### Using GitHub and Creating Effective READMEs
-If you are unfamiliar with GitHub , Udacity has a brief [GitHub tutorial](http://blog.udacity.com/2015/06/a-beginners-git-github-tutorial.html) to get you started. Udacity also provides a more detailed free [course on git and GitHub](https://www.udacity.com/course/how-to-use-git-and-github--ud775).
 
-To learn about REAMDE files and Markdown, Udacity provides a free [course on READMEs](https://www.udacity.com/courses/ud777), as well. 
+### Full Convoltional Network
 
-GitHub also provides a [tutorial](https://guides.github.com/features/mastering-markdown/) about creating Markdown files.
+Traditional CNNs are great for classification task for answering questions like "Is this a hotdog?", but its fully connected layers don't preserve spatial information, therefore cannot answer the question "Where in ths picture is the hot dog?"
+
+CNN's fully connected layers have few disadvantages:
+
+* don't preserve spatial information
+* constrain the network's input size
+
+FCNs can do what CNNs cannot do - it preserve the spatial information throughout the entire network, and will work with images of any size.
+
+FCN is comprised of two parts: encoder and decoder.
+
+![alt text][image1]
+
+#### Encoder
+
+Encoder extract features that will later be used by the decoder, which is similar to transfer learning. In this project, a pre-trained VGG model on ImageNet was downloaded and the input, keep probability, layer 3, layer 4, and layer7 are extracted. I did this in lines 21 to 44 in `main.py`.
+
+#### Decoder
+
+##### Transpose Convolutions
+
+Decoder upsample images out of encoder such that the network's output is the same size as the original image. A series of transposed convolutions were used as following:
+
+```
+output = tf.layers.conv2d_transpose(input, num_classes, 4, strides=(2, 2))
+```
+
+##### Skip Connection
+
+One effect of convolution or encoding is it narrows down the scope by looking closely at some pictures and lose the bigger pictre as a result. So even if we decode the outpt of the encoder back to the original image size, some information has been lost.
+
+Skip connection is a way to retain information by connectin the output of one layer to a non-adjacent layer.
+
+![alt text][image2]
+
+The VGG-16 model already contains the 1x1 convolutions that replaced the flly connected layers. Additional 1x1 convolution layers were added to reduce the number of filters form 4096 to the number of classes, i.e., 2.
+
+The scaling layers were added to the outputs of pooling layer 3 and 4.
+
+I've added l2-regularization to all layers to avoid overfitting. 
+
+I did this in the function `layers()` in lines 48 to 76 in `main.py`.
+
+#### Classification and Loss
+
+In this step I defined the loss to train FCN like CNN. I manuually added the regularization loss terms to the loss function.
+
+I did this in the function `optimize()` in lines 80 to 96 in `main.py`.
+
+#### Train Model
+
+I trained the model in the function `train_nn()` in lines 100 to 131. The hyperparameters were chosen to be Epochs=50 and batch_size=5.
+
+### Results
+
+Here are some of the images from the otpt of the FCN with 2 classes: road or not road.
+
+![alt text][image3]
+![alt text][image4]
+![alt text][image5]
+![alt text][image6]
+![alt text][image7]
+
+### Future Workds
+
+* Apply the trained model to a video
+* Train and Inference on the cityscapes dataset instead of the Kitti dataset. 
+* Augment images for better results
