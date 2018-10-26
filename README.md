@@ -11,6 +11,9 @@ The goal of this project is to label the pixels of a road in images using a Full
 [image5]: ./misc_images/um_000083.png
 [image6]: ./misc_images/umm_000033.png
 [image7]: ./misc_images/uu_000098.png
+[image8]: ./misc_images/segmentation.jpeg
+
+![alt text][image8]
 
 ### Setup
 ##### GPU
